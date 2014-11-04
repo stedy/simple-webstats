@@ -1,6 +1,7 @@
 library(ggplot2)
 library(RCurl)
 library(plyr)
+library(RJSONIO)
 
 #change this location to your own server log
 serverlog <- "access.log"
@@ -15,16 +16,25 @@ keep <- raw[raw$http.code >= 200 & raw$http.code <= 299 &
 
 unique.lookup <- data.frame(ipaddress=unique(keep$ipaddress))
 
-citymap <- ddply(unique.lookup, "ipaddress", function(x) data.frame(city=getURL(paste0("ipinfo.io/", x$ipaddress, "/city"))))
-countrymap <- ddply(unique.lookup, "ipaddress", function(x) data.frame(country=getURL(paste0("ipinfo.io/", x$ipaddress, "/country"))))
+roughjson <- ddply(unique.lookup, "ipaddress", function(x) data.frame(result=getURL(paste0("ipinfo.io/", x$ipaddress))))
+expandedjson <- c()
+for(x in roughjson$result){
+  expandedjson <- rbind(expandedjson, fromJSON(x))
+}
 
-citymap$city <- gsub("^\\s+|\\s+$", "", citymap$city)
-countrymap$country <- gsub("^\\s+|\\s+$", "", countrymap$country)
-keep <- merge(keep, citymap)
-keep <- merge(keep, countrymap)
-uniques <- keep[!duplicated(keep), ]
+merged.json <- merge(roughjson, expandedjson)
+
+merged.json$city <- gsub("^\\s+|\\s+$", "", merged.json$city)
+merged.json$country <- gsub("^\\s+|\\s+$", "", merged.json$country)
+
+uniques <- merged.json[!duplicated(merged.json), ]
 uniques$city.country <- paste(uniques$city, uniques$country, sep=",")
 ggplot(data = uniques) + geom_bar(aes(x=datetime, fill=referrer), binwidth=1)
 
 ggplot(data = uniques) + geom_bar(aes(x=city.country, fill=city.country), binwidth=1) + 
   theme(axis.text.x=element_text(angle = -45, hjust = 0)) 
+
+temp <- c()
+for(x in roughjson$result){
+  temp <- rbind(temp, fromJSON(x))
+}
