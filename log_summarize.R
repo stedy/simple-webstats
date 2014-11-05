@@ -14,14 +14,17 @@ raw$datetime <- as.Date(raw$datetime, format="[%d/%b/%Y:%H:%M:%S")
 keep <- raw[raw$http.code >= 200 & raw$http.code <= 299 &
               raw$datetime >= Sys.Date() - 7, ]
 
-unique.lookup <- data.frame(ipaddress=unique(keep$ipaddress))
+unique.lookup <- data.frame(ip=unique(keep$ip))
 
-roughjson <- ddply(unique.lookup, "ipaddress", function(x) data.frame(result=getURL(paste0("ipinfo.io/", x$ipaddress))))
+roughjson <- ddply(unique.lookup, "ip", function(x) data.frame(result=getURL(paste0("ipinfo.io/", x$ip))))
 expandedjson <- c()
 for(x in roughjson$result){
   expandedjson <- rbind(expandedjson, fromJSON(x))
 }
 expandedjson <- data.frame(expandedjson)
+expandedjson <- sapply(expandedjson, as.character)
+expandedjson <- data.frame(expandedjson)
+
 expandedjson <- merge(expandedjson, keep)
 
 expandedjson$city <- gsub("^\\s+|\\s+$", "", expandedjson$city)
