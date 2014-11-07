@@ -33,7 +33,12 @@ expandedjson$country <- gsub("^\\s+|\\s+$", "", expandedjson$country)
 forplot <- expandedjson[c('ip', 'datetime', 'city', 'country', 'referrer')]
 uniques <- forplot[!duplicated(forplot), ]
 uniques$city.country <- paste(uniques$city, uniques$country, sep=",")
-ggplot(data = uniques) + geom_bar(aes(x=datetime, fill=referrer), binwidth=1)
 
+png('referrer.png', width=800, height=550)
+ggplot(data = uniques) + geom_bar(aes(x=datetime, fill=referrer), binwidth=1)
+dev.off()
+
+png('city_country.png', width=800, height=550)
 ggplot(data = uniques) + geom_bar(aes(x=city.country, fill=city.country), binwidth=1) + 
   theme(axis.text.x=element_text(angle = -45, hjust = 0)) 
+dev.off()
