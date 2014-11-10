@@ -1,3 +1,7 @@
 *.png
+*.RData
+*.rdb
+*.rdx
 .Rhistory
+*_packages
 access.log
