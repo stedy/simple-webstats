@@ -19,11 +19,13 @@ unique.lookup <- data.frame(ip=unique(keep$ip))
 roughjson <- ddply(unique.lookup, "ip", function(x) data.frame(result=getURL(paste0("ipinfo.io/", x$ip))))
 expandedjson <- c()
 for(x in roughjson$result){
-  expandedjson <- rbind(expandedjson, fromJSON(x))
-}
-expandedjson <- data.frame(expandedjson)
-expandedjson <- sapply(expandedjson, as.character)
-expandedjson <- data.frame(expandedjson)
+  json_file <- fromJSON(x)
+  
+  json_file[sapply(json_file, is.null)] <- NA
+  json_file <- unlist(json_file)
+  
+  expandedjson <- rbind(expandedjson, json_file)
+  }
 
 expandedjson <- merge(expandedjson, keep)
 
