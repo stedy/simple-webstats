@@ -14,6 +14,7 @@ names(raw) <- c('ip', 'datetime', 'request', 'http.code',
                 'size', 'referrer', 'browser.os')
 raw$datetime <- as.Date(raw$datetime, format="[%d/%b/%Y:%H:%M:%S")
 
+#Assume any HTTP code 200 is a visit, ignore all others
 keep <- raw[raw$http.code >= 200 & raw$http.code <= 299 &
               raw$datetime >= Sys.Date() - 7 &
               raw$referrer != "-", ]
