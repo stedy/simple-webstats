@@ -8,6 +8,9 @@ library(RJSONIO)
 #change this location to your own server log
 serverlog <- "access.log"
 
+#add the IP of your dev environment so you aren't counting yourself
+regular.ips <- c()
+
 raw <- read.table(serverlog)
 raw <- raw[, c(1,4,6:10)]
 names(raw) <- c('ip', 'datetime', 'request', 'http.code',
@@ -26,10 +29,10 @@ roughjson <- ddply(unique.lookup, "ip", function(x) data.frame(result=getURL(pas
 expandedjson <- c()
 for(x in roughjson$result){
   json_file <- fromJSON(x)
-  
+
   json_file[sapply(json_file, is.null)] <- NA
   json_file <- unlist(json_file)
-  
+
   expandedjson <- rbind(expandedjson, json_file)
   }
 
@@ -37,6 +40,7 @@ expandedjson <- merge(expandedjson, keep)
 
 expandedjson$city <- gsub("^\\s+|\\s+$", "", expandedjson$city)
 expandedjson$country <- gsub("^\\s+|\\s+$", "", expandedjson$country)
+expandedjson <- expandedjson[expandedjson$ip %notin% regular.ips, ]
 
 forplot <- expandedjson[c('ip', 'datetime', 'city', 'country', 'basename')]
 uniques <- forplot[!duplicated(forplot), ]
