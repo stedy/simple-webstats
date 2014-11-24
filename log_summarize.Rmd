@@ -40,7 +40,7 @@ expandedjson <- merge(expandedjson, keep)
 
 expandedjson$city <- gsub("^\\s+|\\s+$", "", expandedjson$city)
 expandedjson$country <- gsub("^\\s+|\\s+$", "", expandedjson$country)
-expandedjson <- expandedjson[expandedjson$ip %notin% regular.ips, ]
+expandedjson <- expandedjson[!(expandedjson$ip %in% regular.ips), ]
 
 forplot <- expandedjson[c('ip', 'datetime', 'city', 'country', 'basename')]
 uniques <- forplot[!duplicated(forplot), ]
