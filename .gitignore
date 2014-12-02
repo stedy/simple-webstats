@@ -1,3 +1,5 @@
+*.html
+*.md
 *.png
 *.RData
 *.rdb

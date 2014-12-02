@@ -40,11 +40,13 @@ expandedjson <- merge(expandedjson, keep)
 
 expandedjson$city <- gsub("^\\s+|\\s+$", "", expandedjson$city)
 expandedjson$country <- gsub("^\\s+|\\s+$", "", expandedjson$country)
-expandedjson <- expandedjson[expandedjson$ip %notin% regular.ips, ]
+expandedjson <- expandedjson[!(expandedjson$ip %in% regular.ips), ]
 
 forplot <- expandedjson[c('ip', 'datetime', 'city', 'country', 'basename')]
 uniques <- forplot[!duplicated(forplot), ]
 uniques$city.country <- paste(uniques$city, uniques$country, sep=",")
+uniques$basename[sapply(uniques$basename, is.null)] <- NA
+uniques$basename <- unlist(uniques$basename)
 ```
 
 Generation Data
@@ -52,7 +54,7 @@ Generation Data
 print(paste("Figures generated at", Sys.time(), sep=" "))
 ```
 
-```{r fig.width=8, fig.height=10, echo=FALSE, warning=FALSE, cache=TRUE}
+```{r fig.width=9, fig.height=11, echo=FALSE, warning=FALSE, cache=TRUE}
 ggplot(data = uniques) + geom_bar(aes(x=datetime, fill=basename), binwidth=1) +
 ggtitle("Referrer data")
 
