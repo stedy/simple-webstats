@@ -6,7 +6,7 @@ library(httr)
 library(RJSONIO)
 
 #change this location to your own server log
-serverlog <- "access.log"
+serverlog <- ""
 
 #add the IP of your dev environment so you aren't counting yourself
 regular.ips <- c()
@@ -44,6 +44,7 @@ expandedjson <- expandedjson[!(expandedjson$ip %in% regular.ips), ]
 
 forplot <- expandedjson[c('ip', 'datetime', 'city', 'country', 'basename')]
 uniques <- forplot[!duplicated(forplot), ]
+uniques <- uniques[complete.cases(uniques$city), ]
 uniques$city.country <- paste(uniques$city, uniques$country, sep=",")
 uniques$basename[sapply(uniques$basename, is.null)] <- NA
 uniques$basename <- unlist(uniques$basename)
@@ -54,7 +55,7 @@ Generation Data
 print(paste("Figures generated at", Sys.time(), sep=" "))
 ```
 
-```{r fig.width=9, fig.height=11, echo=FALSE, warning=FALSE, cache=TRUE}
+```{r fig.width=9, fig.height=13, echo=FALSE, warning=FALSE, cache=TRUE}
 ggplot(data = uniques) + geom_bar(aes(x=datetime, fill=basename), binwidth=1) +
 ggtitle("Referrer data")
 
