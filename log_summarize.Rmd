@@ -5,6 +5,8 @@ library(plyr)
 library(httr)
 library(RJSONIO)
 
+options(warn=-1)
+
 #change this location to your own server log
 serverlog <- ""
 
@@ -33,16 +35,15 @@ for(x in roughjson$result){
   json_file[sapply(json_file, is.null)] <- NA
   json_file <- unlist(json_file)
 
-  expandedjson <- rbind(expandedjson, json_file)
+  expandedjson <- rbind(expandedjson, json_file[c("ip", "city", "country", "hostname", "org")])
   }
 
 expandedjson <- merge(expandedjson, keep)
 
-expandedjson$city <- gsub("^\\s+|\\s+$", "", expandedjson$city)
-expandedjson$country <- gsub("^\\s+|\\s+$", "", expandedjson$country)
+expandedjson[] <- lapply(expandedjson, as.character)
 expandedjson <- expandedjson[!(expandedjson$ip %in% regular.ips), ]
 
-forplot <- expandedjson[c('ip', 'datetime', 'city', 'country', 'basename')]
+forplot <- expandedjson[c('ip', 'datetime', 'city', 'country', 'basename', 'org')]
 uniques <- forplot[!duplicated(forplot), ]
 uniques <- uniques[complete.cases(uniques$city), ]
 uniques$city.country <- paste(uniques$city, uniques$country, sep=",")
@@ -63,4 +64,7 @@ ggplot(data = uniques) + geom_bar(aes(x=city.country, fill=city.country), binwid
   theme(axis.text.x=element_text(angle = -45, hjust = 0)) +
   ggtitle("Visitor Location data")
 
+ggplot(data = uniques) + geom_bar(aes(x=org, fill=org), binwidth=1) + 
+  theme(axis.text.x=element_text(angle = -45, hjust = 0)) +
+  ggtitle("Visitor org. data")
 ```
