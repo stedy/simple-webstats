@@ -1,9 +1,6 @@
 ```{r, echo=FALSE, warning=FALSE, cache=FALSE}
 library(ggplot2)
-library(RCurl)
-library(plyr)
-library(httr)
-library(RJSONIO)
+library(dplyr)
 
 options(warn=-1)
 
@@ -13,24 +10,30 @@ serverlog <- ""
 #add the IP of your dev environment so you aren't counting yourself
 regular.ips <- c()
 
-raw <- read.table(serverlog)
-raw <- raw[, c(1,4,6:10)]
-names(raw) <- c('ip', 'datetime', 'request', 'http.code',
-                'size', 'referrer', 'browser.os')
-raw$datetime <- as.Date(raw$datetime, format="[%d/%b/%Y:%H:%M:%S")
+raw <- read.table(serverlog) %>%
+  select(ip = V1, datetime = V4, request = V6,
+         http.code = V7, size = V8, referrer = V9,
+         browser.os = V10) %>%
+  mutate(datetime = as.Date(datetime, format="[%d/%b/%Y:%H:%M:%S"))
 
 #Assume any HTTP code 200 is a visit, ignore all others
-keep <- raw[raw$http.code >= 200 & raw$http.code <= 299 &
-              raw$datetime >= Sys.Date() - 7 &
-              raw$referrer != "-", ]
+keep <- 
+  raw %>%
+  subset(http.code >= 200 & http.code <= 299 &
+              datetime >= Sys.Date() - 7 &
+              referrer != "-")
 
-keep$basename <- sapply(keep$referrer, function(x) parse_url(x)$hostname)
+keep$basename <- sapply(keep$referrer, function(x) httr::parse_url(x)$hostname)
 unique.lookup <- data.frame(ip=unique(keep$ip))
 
-roughjson <- ddply(unique.lookup, "ip", function(x) data.frame(result=getURL(paste0("ipinfo.io/", x$ip))))
+roughjson <- 
+  unique.lookup %>%
+  group_by("ip") %>%
+  do(data.frame(result=getURL(paste0("ipinfo.io/", .$ip))))
+                              
 expandedjson <- c()
 for(x in roughjson$result){
-  json_file <- fromJSON(x)
+  json_file <- RJSONIO::fromJSON(x)
 
   json_file[sapply(json_file, is.null)] <- NA
   json_file <- unlist(json_file)
@@ -43,12 +46,17 @@ expandedjson <- merge(expandedjson, keep)
 expandedjson[] <- lapply(expandedjson, as.character)
 expandedjson <- expandedjson[!(expandedjson$ip %in% regular.ips), ]
 
-forplot <- expandedjson[c('ip', 'datetime', 'city', 'country', 'basename', 'org')]
-uniques <- forplot[!duplicated(forplot), ]
-uniques <- uniques[complete.cases(uniques$city), ]
-uniques$city.country <- paste(uniques$city, uniques$country, sep=",")
-uniques$basename[sapply(uniques$basename, is.null)] <- NA
-uniques$basename <- unlist(uniques$basename)
+forplot <- 
+  expandedjson %>%
+  select(ip, datetime, city, country, basename, org) %>%
+  distinct %>%
+  filter(complete.cases(city)) %>%
+  mutate(city.country = paste(city, country, sep=","))
+
+  forplot[!duplicated(forplot), ]
+
+forplot$basename[sapply(forplot$basename, is.null)] <- NA
+forplot$basename <- unlist(forplot$basename)
 ```
 
 Generation Data
@@ -57,14 +65,14 @@ print(paste("Figures generated at", Sys.time(), sep=" "))
 ```
 
 ```{r fig.width=9, fig.height=13, echo=FALSE, warning=FALSE, cache=TRUE}
-ggplot(data = uniques) + geom_bar(aes(x=datetime, fill=basename), binwidth=1) +
+ggplot(data = forplot) + geom_bar(aes(x=datetime, fill=basename), binwidth=1) +
 ggtitle("Referrer data")
 
-ggplot(data = uniques) + geom_bar(aes(x=city.country, fill=city.country), binwidth=1) + 
+ggplot(data = forplot) + geom_bar(aes(x=city.country, fill=city.country), binwidth=1) + 
   theme(axis.text.x=element_text(angle = -45, hjust = 0)) +
   ggtitle("Visitor Location data")
 
-ggplot(data = uniques) + geom_bar(aes(x=org, fill=org), binwidth=1) + 
+ggplot(data = forplot) + geom_bar(aes(x=org, fill=org), binwidth=1) + 
   theme(axis.text.x=element_text(angle = -45, hjust = 0)) +
   ggtitle("Visitor org. data")
 ```
