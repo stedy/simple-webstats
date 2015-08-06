@@ -1,6 +1,6 @@
 ```{r, echo=FALSE, warning=FALSE, cache=FALSE}
 library(ggplot2)
-library(dplyr)
+suppressMessages(library(dplyr))
 
 options(warn=-1)
 
@@ -29,7 +29,7 @@ unique.lookup <- data.frame(ip=unique(keep$ip))
 roughjson <- 
   unique.lookup %>%
   group_by("ip") %>%
-  do(data.frame(result=getURL(paste0("ipinfo.io/", .$ip))))
+  do(data.frame(result = RCurl::getURL(paste0("ipinfo.io/", .$ip))))
                               
 expandedjson <- c()
 for(x in roughjson$result){
@@ -52,11 +52,7 @@ forplot <-
   distinct %>%
   filter(complete.cases(city)) %>%
   mutate(city.country = paste(city, country, sep=","))
-
-  forplot[!duplicated(forplot), ]
-
 forplot$basename[sapply(forplot$basename, is.null)] <- NA
-forplot$basename <- unlist(forplot$basename)
 ```
 
 Generation Data
