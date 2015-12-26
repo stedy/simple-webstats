@@ -61,14 +61,24 @@ print(paste("Figures generated at", Sys.time(), sep=" "))
 ```
 
 ```{r fig.width=9, fig.height=13, echo=FALSE, warning=FALSE, cache=TRUE}
-ggplot(data = forplot) + geom_bar(aes(x=datetime, fill=basename), binwidth=1) +
-ggtitle("Referrer data")
+ggplot(forplot, aes(datetime)) + geom_bar(aes(fill=basename)) + ggtitle("Referrer data")
 
-ggplot(data = forplot) + geom_bar(aes(x=city.country, fill=city.country), binwidth=1) + 
+ggplot(forplot, aes(city.country)) + geom_bar(aes(fill=city.country)) + 
   theme(axis.text.x=element_text(angle = -45, hjust = 0)) +
   ggtitle("Visitor Location data")
 
-ggplot(data = forplot) + geom_bar(aes(x=org, fill=org), binwidth=1) + 
+ggplot(forplot, aes(org)) + geom_bar(aes(fill=org)) + 
   theme(axis.text.x=element_text(angle = -45, hjust = 0)) +
   ggtitle("Visitor org. data")
 ```
+
+Seattle specific
+```{r, echo=FALSE}
+seattle.only <-
+  expandedjson %>%
+  subset(city %in% c("Redmond", "Seattle")) %>%
+  select(ip, hostname, org, datetime) %>%
+  distinct
+knitr::kable(seattle.only)
+```
+
