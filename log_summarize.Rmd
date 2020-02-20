@@ -17,7 +17,7 @@ raw <- read.table(serverlog) %>%
   mutate(datetime = as.Date(datetime, format="[%d/%b/%Y:%H:%M:%S"))
 
 #Assume any HTTP code 200 is a visit, ignore all others
-keep <- 
+keep <-
   raw %>%
   subset(http.code >= 200 & http.code <= 299 &
               datetime >= Sys.Date() - 7 &
@@ -26,11 +26,11 @@ keep <-
 keep$basename <- sapply(keep$referrer, function(x) httr::parse_url(x)$hostname)
 unique.lookup <- data.frame(ip=unique(keep$ip))
 
-roughjson <- 
+roughjson <-
   unique.lookup %>%
   group_by("ip") %>%
   do(data.frame(result = RCurl::getURL(paste0("ipinfo.io/", .$ip))))
-                              
+
 expandedjson <- c()
 for(x in roughjson$result){
   json_file <- RJSONIO::fromJSON(x)
@@ -42,11 +42,12 @@ for(x in roughjson$result){
   }
 
 expandedjson <- merge(expandedjson, keep)
+names(expandedjson)[4] <- "hostname"
 
 expandedjson[] <- lapply(expandedjson, as.character)
 expandedjson <- expandedjson[!(expandedjson$ip %in% regular.ips), ]
 
-forplot <- 
+forplot <-
   expandedjson %>%
   select(ip, datetime, city, country, basename, org) %>%
   distinct %>%
@@ -63,11 +64,11 @@ print(paste("Figures generated at", Sys.time(), sep=" "))
 ```{r fig.width=9, fig.height=13, echo=FALSE, warning=FALSE, cache=TRUE}
 ggplot(forplot, aes(datetime)) + geom_bar(aes(fill=basename)) + ggtitle("Referrer data")
 
-ggplot(forplot, aes(city.country)) + geom_bar(aes(fill=city.country)) + 
+ggplot(forplot, aes(city.country)) + geom_bar(aes(fill=city.country)) +
   theme(axis.text.x=element_text(angle = -45, hjust = 0)) +
   ggtitle("Visitor Location data")
 
-ggplot(forplot, aes(org)) + geom_bar(aes(fill=org)) + 
+ggplot(forplot, aes(org)) + geom_bar(aes(fill=org)) +
   theme(axis.text.x=element_text(angle = -45, hjust = 0)) +
   ggtitle("Visitor org. data")
 ```
@@ -81,4 +82,3 @@ seattle.only <-
   distinct
 knitr::kable(seattle.only)
 ```
-
